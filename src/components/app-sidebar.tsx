@@ -4,6 +4,13 @@ import { Calendar, Home, Inbox, Search, Settings } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
@@ -16,13 +23,17 @@ import {
 import { useEffect, useState } from 'react'
 import { useModels, useFileId, usePrompts } from "@/components/context-provider"
 
-interface Model {
-  model_id: string;
+interface ModelConfig {
+  apiKey: string;
   model: string;
   temperature: number;
-  max_length: number;
-  top_p: number;
+  topP: number;
+  maxLength: number;
 }
+
+//const [selectedModels, setSelectedModels] = useState<Record<string, ModelConfig>>({}); om which the key is the provder
+
+type Model = ModelConfig;
 
 interface ModelsResponse {
   models: Record<string, Model>;
@@ -49,7 +60,8 @@ interface PromptResponse {
 }
 
 const AppSidebar: React.FC = () => {
-  const [models, setModels] = useState<ModelsResponse | null>(null);
+  const [fetchedModels, setModels] = useState<ModelsResponse | null>(null);
+  const { selectedModels, setSelectedModels } = useModels();
   const [fetchedFiles, setFetchedFiles] = useState<FilesResponse | null>(null);
   const { file_id, setFileId } = useFileId();
   const handleFileClick = (fileId: string) => {
@@ -87,8 +99,23 @@ const AppSidebar: React.FC = () => {
   const handlePromptChange = (index: number, value: string) => {
     setPrompts({ ...prompts, [index]: value });
   };
+  
+  const handleAddModel = (modelType: string, modelConfig: ModelConfig) => {
+    setSelectedModels((prevModels: Record<string, ModelConfig>) => ({
+      ...prevModels,
+      [modelType]: modelConfig
+    }));
+  };
 
-  console.log(models, file_id, prompts);
+  const handleRemoveModel  = (modelKey: string) => {
+      setSelectedModels(prevModels => {
+        const newModels = { ...prevModels };
+        delete newModels[modelKey];
+        return newModels;
+      });
+    };
+
+  console.log(selectedModels, file_id, prompts);
 
   return (
     <Sidebar>
@@ -96,67 +123,62 @@ const AppSidebar: React.FC = () => {
         <SidebarGroup>
           <SidebarGroupLabel>Recent Models</SidebarGroupLabel>
           <SidebarGroupContent>
-            <div className="overflow-y-auto max-h-64">
-              {models && Object.entries(models.models).map(([provider, model], index) => (
-                <div key={model.model_id} className="mx-3 p-2 mb-2 border rounded">
-                  <Checkbox
-                    id={`model-${index}`}
-                    onChange={(e) => {
-                      if ((e.target as HTMLInputElement).checked) {
-                        useModels().setSelectedModels((prev) => ({ ...prev, [index]: model.model_id }));
-                      } else {
-                        useModels().setSelectedModels((prev) => {
-                          const newModels = { ...prev };
-                          delete newModels[index];
-                          return newModels;
-                        });
-                      }
-                    }}
-                  />
-                  <div className="grid gap-1.5 leading-none">
-                    <label
-                      htmlFor={`model-${index}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      <strong>{provider}</strong>
-                    </label>
-                    <p className="text-sm text-muted-foreground">
-                      Model: {model.model}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Temperature: {model.temperature}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Max Length: {model.max_length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Top P: {model.top_p}
-                    </p>
+            <div className="max-h-84">
+                {fetchedModels && Object.entries(fetchedModels.models).map(([provider, model], index) => (
+                  <div key={index} className="mx-3 p-2 mb-2 border rounded">
+                    <div className="grid gap-1.5 leading-none">
+                      <label
+                        htmlFor={`model-${index}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        <strong>{provider}</strong>
+                      </label>
+                      <p className="text-sm text-muted-foreground">
+                        {model.model} 
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Temperature: {model.temperature} | Max Length: {model.maxLength} | Top P: {model.topP}
+                      </p>
+                      <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleAddModel(provider, model)}
+                        >
+                          +
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleRemoveModel(provider)}
+                          disabled={!selectedModels[provider]}
+                        >
+                          -
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </SidebarGroupContent>
           <SidebarGroupLabel>Uploaded Test Files</SidebarGroupLabel>
           <SidebarGroupContent>
-            <div className="overflow-y-auto max-h-54">
-              <select
-              className="w-full p-2 border rounded"
-              onChange={(e) => handleFileClick(e.target.value)}
-              value={file_id || ""}
-              >
-              <option value="" disabled>Select a file</option>
-              {fetchedFiles && fetchedFiles.files.map((file) => (
-                <option key={file.file_id} value={file.file_id}>
-                {file.file_name} (Test Count: {file.test_count})
-                </option>
-              ))}
-              </select>
+            <div className="mx-2">
+              <Select onValueChange={(value) => handleFileClick(value)} value={file_id || ""}>
+                <SelectTrigger className="w-full p-2 border rounded">
+                  <SelectValue placeholder="Select a file" />
+                </SelectTrigger>
+                <SelectContent>
+                  {fetchedFiles && fetchedFiles.files.map((file) => (
+                    <SelectItem key={file.file_id} value={file.file_id}>
+                      {file.file_name} (Test Count: {file.test_count})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </SidebarGroupContent>
           <SidebarGroupLabel>Recent Prompts</SidebarGroupLabel>
             <SidebarGroupContent>
-            <div className="overflow-y-auto max-h-64">
+            <div className="overflow-y-auto max-h-80">
               {fetchedPrompts && fetchedPrompts.prompts.map((prompt, index) => (
               <div key={index} className="mx-3 p-2 mb-2 border rounded">
                 <div className="grid gap-1.5 leading-none">

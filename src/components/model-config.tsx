@@ -86,14 +86,14 @@ function ModelConfigContent() {
                     <p>API Key:</p>
                     <Input
                         type="password"
-                        value={configs[modelType].apiKey}
+                        value={selectedModels[modelType]?.apiKey || configs[modelType].apiKey}
                         onChange={(e) => handleChange(modelType, 'apiKey', e.target.value)}
                     />
                 </CardContent>
                 <CardContent>
                     <p>Model:</p>
                     <Select
-                        value={configs[modelType].model}
+                        value={selectedModels[modelType]?.model || configs[modelType].model}
                         onValueChange={(value) => handleChange(modelType, 'model', value)}
                     >
                         <SelectTrigger>
@@ -111,7 +111,7 @@ function ModelConfigContent() {
                 <CardContent>
                     <p>Temperature:</p>
                     <Slider
-                        value={[configs[modelType].temperature]}
+                        value={[selectedModels[modelType]?.temperature || configs[modelType].temperature]}
                         onValueChange={(value) => handleChange(modelType, 'temperature', value[0])}
                         step={0.1}
                         min={0}
@@ -121,7 +121,7 @@ function ModelConfigContent() {
                 <CardContent>
                     <p>Top-P:</p>
                     <Slider
-                        value={[configs[modelType].topP]}
+                        value={[selectedModels[modelType]?.topP || configs[modelType].topP]}
                         onValueChange={(value) => handleChange(modelType, 'topP', value[0])}
                         step={0.1}
                         min={0}
@@ -131,7 +131,7 @@ function ModelConfigContent() {
                 <CardContent>
                     <p>Max Length:</p>
                     <Slider
-                        value={[configs[modelType].maxLength]}
+                        value={[selectedModels[modelType]?.maxLength || configs[modelType].maxLength]}
                         onValueChange={(value) => handleChange(modelType, 'maxLength', value[0])}
                         step={1}
                         min={1}

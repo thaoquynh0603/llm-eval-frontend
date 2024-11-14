@@ -4,9 +4,7 @@ import AppSidebar from "@/components/app-sidebar"
 import ConnectDataset from '@/components/connect-dataset';
 import { ModelConfig } from "@/components/model-config";
 import PromptComponent from "@/components/prompt-component";
-import ResultDisplay from '@/components/result-display';
 import { useAppContext } from '@/components/context-provider';
-import { Button } from "@/components/ui/button"
 import { useCallback, useState } from 'react';
 import {
   Accordion,
@@ -14,17 +12,21 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 
 export default function Home() {
@@ -153,7 +155,6 @@ export default function Home() {
                           <strong> Provider: </strong> {provider}
                         </div>
                         <div style={{ marginRight: '10px' }}>
-                            <strong> Prompt No: </strong> {index}
                             <div style={{ marginLeft: '10px' }}>
                             <strong>Prompt:</strong> {prompt.slice(0, 50)}{prompt.length > 50 ? '...' : ''}
                             </div>
@@ -161,22 +162,28 @@ export default function Home() {
                       </div>
                         <div className="flex items-center space-x-2">
                           <div>
-                          <select id={`evaluation-type-${provider}-${index}`} onChange={(e) => {
-                            const evaluationType = (e.target as HTMLSelectElement).value;
-                            handleSubmit(provider, prompt, evaluationType);
-                          }}>
-                            <option value="absolute">Absolute</option>
-                            <option value="relative">Relative</option>
-                          </select>
+                            <Select onValueChange={(value) => handleSubmit(provider, prompt, value)} defaultValue="absolute">
+                            <SelectTrigger className="w-full p-2 border rounded">
+                              <SelectValue placeholder="Select evaluation type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="absolute">Absolute</SelectItem>
+                              <SelectItem value="relative">Relative</SelectItem>
+                            </SelectContent>
+                            </Select>
                           </div>
                         </div>
                         <div className='mx-1'>
                         <div className="button-wrapper" onClick={() => {
+                          if (file_id) {
                           const element = document.getElementById(`evaluation-type-${provider}-${index}`) as HTMLSelectElement;
                           const evaluationType = element ? element.value : 'absolute';
                           handleSubmit(provider, prompt, evaluationType);
+                          } else {
+                          console.error('File ID is required to submit');
+                          }
                         }}>
-                            <div style={{ backgroundColor: 'black', color: 'white', padding: '5px 10px', borderRadius: '5px', cursor: 'pointer' }}>Submit</div>
+                          <div style={{ backgroundColor: file_id ? 'black' : 'grey', color: 'white', padding: '5px 10px', borderRadius: '5px', cursor: file_id ? 'pointer' : 'not-allowed' }}>Submit</div>
                         </div>
                       </div>
                     </div>
